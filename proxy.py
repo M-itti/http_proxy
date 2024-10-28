@@ -1,10 +1,16 @@
 from werkzeug.wrappers import Request, Response
 from request_errors import gateway_errors
 from wsgiref.simple_server import make_server
+from requests.exceptions import RequestException
 import requests
 
 def get_headers(request):
     return {header: value for header, value in request.headers.items()}
+
+def set_forward_headers(headers, request):
+    headers['X-Forwarded-For'] = request.remote_addr
+    headers['X-Forwarded-Proto'] = request.scheme
+    headers['X-Forwarded-Host'] = request.host
 
 def rm_HopByHop(headers):
     hop_by_hop_headers = {
@@ -18,6 +24,9 @@ def application(env, start_response):
     upstream_url = env["PATH_INFO"]
     
     client_headers = get_headers(request)
+
+    # Add forwarded headers to client headers
+    client_headers = set_forwarded_headers(client_headers, request)
 
     if env['REQUEST_METHOD'] == 'GET':
         try:
@@ -58,7 +67,7 @@ def application(env, start_response):
 
             status = str(r.status_code)
             body = r.content if r.content is not None else b""
-            server_headers = r.headers
+            server_headers = rm_HopByHop(r.headers)
 
             response = Response(
                 response=body,  
@@ -82,7 +91,7 @@ def application(env, start_response):
 
             status = str(r.status_code)
             body = r.content if r.content is not None else b""
-            server_headers = r.headers
+            server_headers = rm_HopByHop(r.headers)
 
             response = Response(
                 response=body,  
@@ -102,7 +111,7 @@ def application(env, start_response):
 
             status = str(r.status_code)
             body = r.content if r.content is not None else b""
-            server_headers = r.headers
+            server_headers = rm_HopByHop(r.headers)
 
             response = Response(
                 response=body,

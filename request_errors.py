@@ -1,4 +1,7 @@
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects, RequestException
+from werkzeug.wrappers import Response
+from requests.exceptions import RequestException
+
 
 def gateway_errors(e):
     if isinstance(e, ConnectionError):
