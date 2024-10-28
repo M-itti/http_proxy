@@ -24,7 +24,6 @@ def application(env, start_response):
     request = Request(env)
     upstream_url = env["PATH_INFO"]
     
-    # TODO: make this one line
     client_headers = set_forwarded_headers(rm_HopByHop(get_headers(request)), request)
 
     if env['REQUEST_METHOD'] == 'GET':
