@@ -2,6 +2,12 @@ from requests.exceptions import ConnectionError, Timeout, TooManyRedirects, Requ
 from werkzeug.wrappers import Response
 from requests.exceptions import RequestException
 
+def resp(message: str, status: int) -> Response:
+    """Helper function to create a Response object."""
+    return Response(
+        response=message.encode('utf-8'),  # Encode the message as bytes
+        status=status
+    )
 
 def gateway_errors(e):
     if isinstance(e, ConnectionError):
@@ -17,9 +23,3 @@ def gateway_errors(e):
         print("[REQUEST ERR]", e)
         return resp("An error occurred with the request.", 500)
 
-def resp(message: str, status: int) -> Response:
-    """Helper function to create a Response object."""
-    return Response(
-        response=message.encode('utf-8'),  # Encode the message as bytes
-        status=status
-    )

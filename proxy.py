@@ -7,14 +7,15 @@ import requests
 def get_headers(request):
     return {header: value for header, value in request.headers.items()}
 
-def set_forward_headers(headers, request):
+def set_forwarded_headers(headers, request):
     headers['X-Forwarded-For'] = request.remote_addr
     headers['X-Forwarded-Proto'] = request.scheme
     headers['X-Forwarded-Host'] = request.host
+    return headers
 
 def rm_HopByHop(headers):
     hop_by_hop_headers = {
-        "Connection", "Proxy-Connection", "Keep-Alive", 
+        "Connection", "Proxy-Connection" , "Keep-Alive", 
         "Transfer-Encoding", "TE", "Trailer", "Upgrade"
     }
     return {key: value for key, value in headers.items() if key not in hop_by_hop_headers}
@@ -23,10 +24,8 @@ def application(env, start_response):
     request = Request(env)
     upstream_url = env["PATH_INFO"]
     
-    client_headers = get_headers(request)
-
-    # Add forwarded headers to client headers
-    client_headers = set_forwarded_headers(client_headers, request)
+    # TODO: make this one line
+    client_headers = set_forwarded_headers(rm_HopByHop(get_headers(request)), request)
 
     if env['REQUEST_METHOD'] == 'GET':
         try:
@@ -74,6 +73,8 @@ def application(env, start_response):
                 status=status,     
                 headers={key: value for key, value in server_headers.items()}
             )
+            return response(env, start_response)
+
         except RequestException as e:
             response = gateway_errors(e)
             return response(env, start_response)
@@ -98,6 +99,8 @@ def application(env, start_response):
                 status=status,     
                 headers={key: value for key, value in server_headers.items()}
             )
+            return response(env, start_response)
+
         except RequestException as e:
             response = gateway_errors(e)
             return response(env, start_response)
@@ -118,6 +121,8 @@ def application(env, start_response):
                 status=status,
                 headers={key: value for key, value in server_headers.items()}
             )
+            return response(env, start_response)
+
         except RequestException as e:
             response = gateway_errors(e)
             return response(env, start_response)
